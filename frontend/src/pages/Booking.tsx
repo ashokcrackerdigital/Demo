@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { startOfToday } from 'date-fns';
+import { startOfToday, addDays, endOfDay } from 'date-fns';
 import { format } from 'date-fns';
 import Calendar from '../components/Calendar';
 import SlotGrid from '../components/SlotGrid';
@@ -123,6 +123,8 @@ const Booking: React.FC = () => {
       <Calendar
         selectedDate={selectedDate}
         onDateSelect={setSelectedDate}
+        minDate={startOfToday()}
+        maxDate={endOfDay(addDays(startOfToday(), 14))} // Next 15 days (today + 14, inclusive)
       />
 
       {/* Slots Grid */}

@@ -3,6 +3,7 @@ import {
   format,
   addDays,
   startOfToday,
+  endOfDay,
   isToday,
   isSameDay,
   startOfMonth,
@@ -26,17 +27,29 @@ const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onDateSelect,
   minDate = startOfToday(),
-  maxDate = addDays(startOfToday(), 15),
+  maxDate = endOfDay(addDays(startOfToday(), 14)), // Today + 14 more days = 15 days total (inclusive)
 }) => {
   const today = startOfToday();
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(selectedDate));
+  const isNavigatingRef = React.useRef(false);
 
-  // Sync calendar view with selected date
+  // Sync calendar view with selected date - but don't interfere with navigation
   useEffect(() => {
-    if (!isSameMonth(selectedDate, currentMonth)) {
-      setCurrentMonth(startOfMonth(selectedDate));
+    // Skip sync if we just navigated
+    if (isNavigatingRef.current) {
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 50);
+      return;
     }
-  }, [selectedDate, currentMonth]);
+    
+    const selectedMonth = startOfMonth(selectedDate);
+    const currentMonthStart = startOfMonth(currentMonth);
+    // Only update if selected date month is different from displayed month
+    if (selectedMonth.getTime() !== currentMonthStart.getTime()) {
+      setCurrentMonth(selectedMonth);
+    }
+  }, [selectedDate]); // Only depend on selectedDate, not currentMonth
 
   // Generate calendar grid for current month
   const monthStart = startOfMonth(currentMonth);
@@ -61,30 +74,31 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const normalizedMinDate = normalizeDate(minDate);
-  const normalizedMaxDate = normalizeDate(maxDate);
+  // Normalize maxDate - extract just the date part (year, month, day) without time
+  const normalizedMaxDate = normalizeDate(new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()));
 
-  // Check if we can navigate to previous month
-  // Allow navigation if previous month has any dates in the valid range
+  // Calculate navigation states for button styling
   const prevMonth = subMonths(currentMonth, 1);
   const prevMonthEnd = normalizeDate(endOfMonth(prevMonth));
   const canGoPrevious = prevMonthEnd.getTime() >= normalizedMinDate.getTime();
 
-  // Check if we can navigate to next month  
-  // Allow navigation if next month has any dates in the valid range
   const nextMonth = addMonths(currentMonth, 1);
   const nextMonthStart = normalizeDate(startOfMonth(nextMonth));
   const canGoNext = nextMonthStart.getTime() <= normalizedMaxDate.getTime();
 
+  // Navigation handlers - simple and direct
   const goToPreviousMonth = () => {
-    if (canGoPrevious) {
-      setCurrentMonth(prevMonth);
-    }
+    if (!canGoPrevious) return;
+    isNavigatingRef.current = true; // Mark that we're navigating
+    const prev = subMonths(currentMonth, 1);
+    setCurrentMonth(prev);
   };
 
   const goToNextMonth = () => {
-    if (canGoNext) {
-      setCurrentMonth(nextMonth);
-    }
+    if (!canGoNext) return;
+    isNavigatingRef.current = true; // Mark that we're navigating
+    const next = addMonths(currentMonth, 1);
+    setCurrentMonth(next);
   };
 
   const goToToday = () => {
@@ -94,15 +108,27 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const isDateDisabled = (date: Date): boolean => {
-    return !isWithinInterval(date, { start: minDate, end: maxDate });
+    const normalizedDate = normalizeDate(date);
+    return !isWithinInterval(normalizedDate, { start: normalizedMinDate, end: normalizedMaxDate });
   };
 
   const isDateSelectable = (date: Date): boolean => {
-    return isWithinInterval(date, { start: minDate, end: maxDate });
+    const normalizedDate = normalizeDate(date);
+    return isWithinInterval(normalizedDate, { start: normalizedMinDate, end: normalizedMaxDate });
   };
 
   const handleDateClick = (date: Date) => {
-    if (isDateSelectable(date)) {
+    const clickedMonth = startOfMonth(date);
+    const isClickOnDifferentMonth = !isSameMonth(date, currentMonth);
+    
+    // If clicking on a date from a different month (next/previous month visible in calendar)
+    if (isClickOnDifferentMonth && isDateSelectable(date)) {
+      // Navigate to that month
+      setCurrentMonth(clickedMonth);
+      // Select the date
+      onDateSelect(date);
+    } else if (isDateSelectable(date)) {
+      // Same month - just select the date
       onDateSelect(date);
     }
   };
@@ -112,7 +138,12 @@ const Calendar: React.FC<CalendarProps> = ({
       {/* Header with Month/Year and Navigation */}
       <div className="flex items-center justify-between mb-4">
         <button
-          onClick={goToPreviousMonth}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            goToPreviousMonth();
+          }}
           className={`
             p-2 rounded-lg transition-colors
             ${canGoPrevious
@@ -123,6 +154,7 @@ const Calendar: React.FC<CalendarProps> = ({
           `}
           aria-label="Previous month"
           aria-disabled={!canGoPrevious}
+          title={canGoPrevious ? 'Go to previous month' : 'Cannot navigate before available date range'}
         >
           <svg
             className="w-5 h-5"
@@ -152,7 +184,12 @@ const Calendar: React.FC<CalendarProps> = ({
         </div>
 
         <button
-          onClick={goToNextMonth}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            goToNextMonth();
+          }}
           className={`
             p-2 rounded-lg transition-colors
             ${canGoNext
@@ -163,6 +200,7 @@ const Calendar: React.FC<CalendarProps> = ({
           `}
           aria-label="Next month"
           aria-disabled={!canGoNext}
+          title={canGoNext ? 'Go to next month' : 'Cannot navigate beyond available date range'}
         >
           <svg
             className="w-5 h-5"
@@ -199,16 +237,19 @@ const Calendar: React.FC<CalendarProps> = ({
           const isCurrentMonth = isSameMonth(date, currentMonth);
           const isDisabled = isDateDisabled(date);
           const isSelectable = isDateSelectable(date);
+          const isDifferentMonth = !isCurrentMonth;
 
           return (
             <button
               key={date.toISOString()}
               onClick={() => handleDateClick(date)}
-              disabled={!isSelectable}
+              disabled={isDifferentMonth ? false : !isSelectable}
               className={`
                 relative p-2 rounded-lg transition-colors min-h-[40px] flex items-center justify-center
                 ${!isCurrentMonth
-                  ? 'text-gray-300'
+                  ? isSelectable 
+                    ? 'text-primary-600 hover:bg-primary-50 cursor-pointer font-medium'
+                    : 'text-gray-300 cursor-not-allowed'
                   : isDisabled
                   ? 'text-gray-300 cursor-not-allowed bg-gray-50'
                   : isSelected
@@ -221,8 +262,11 @@ const Calendar: React.FC<CalendarProps> = ({
                 }
                 focus:outline-none focus:ring-2 focus:ring-primary-500
               `}
-              aria-label={`Select date ${format(date, 'MMMM d, yyyy')}`}
-              aria-disabled={!isSelectable}
+              aria-label={isDifferentMonth 
+                ? `Navigate to ${format(date, 'MMMM')} and select ${format(date, 'd')}`
+                : `Select date ${format(date, 'MMMM d, yyyy')}`
+              }
+              aria-disabled={isDifferentMonth ? false : !isSelectable}
             >
               <span className="block text-sm">{format(date, 'd')}</span>
               {isTodayDate && isCurrentMonth && !isSelected && (
