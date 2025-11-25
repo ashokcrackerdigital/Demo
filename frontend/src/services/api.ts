@@ -56,6 +56,21 @@ export const slotsApi = {
     const response = await api.post<BookingResponse>('/api/book', booking);
     return response.data;
   },
+
+  /**
+   * Book a slot by date (auto-assign next available slot)
+   */
+  bookSlotByDate: async (date: string, bookingData: {
+    patientName: string;
+    patientEmail: string;
+    patientPhone: string;
+  }): Promise<BookingResponse & { slotTime?: string; slotDate?: string }> => {
+    const response = await api.post('/api/book/by-date', {
+      date,
+      ...bookingData,
+    });
+    return response.data;
+  },
 };
 
 export const adminApi = {

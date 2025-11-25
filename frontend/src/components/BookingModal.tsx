@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Slot } from '../types';
 import Button from './Button';
 
 interface BookingModalProps {
-  slot: Slot | null;
+  date: Date;
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (data: {
@@ -16,7 +15,7 @@ interface BookingModalProps {
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({
-  slot,
+  date,
   isOpen,
   onClose,
   onConfirm,
@@ -29,7 +28,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!isOpen || !slot) {
+  if (!isOpen) {
     return null;
   }
 
@@ -108,16 +107,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 Book Appointment
               </h3>
 
-              {/* Slot Information */}
+              {/* Date Information */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600">
-                  <strong>Date:</strong> {format(new Date(slot.date), 'MMMM d, yyyy')}
+                  <strong>Date:</strong> {format(date, 'MMMM d, yyyy')}
                 </p>
-                <p className="text-sm text-gray-600">
-                  <strong>Time:</strong> {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <strong>Type:</strong> {slot.type}
+                <p className="text-sm text-gray-500 mt-1">
+                  A time slot will be automatically assigned after booking
                 </p>
               </div>
 
@@ -136,7 +132,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     name="patientName"
                     value={formData.patientName}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       errors.patientName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="John Doe"
@@ -159,7 +155,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     name="patientEmail"
                     value={formData.patientEmail}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       errors.patientEmail ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="john@example.com"
@@ -182,10 +178,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     name="patientPhone"
                     value={formData.patientPhone}
                     onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                       errors.patientPhone ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="+91 98765 43210"
                   />
                   {errors.patientPhone && (
                     <p className="mt-1 text-sm text-red-600">{errors.patientPhone}</p>

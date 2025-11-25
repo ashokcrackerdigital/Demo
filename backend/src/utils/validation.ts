@@ -8,6 +8,13 @@ export const bookingSchema = z.object({
   patientPhone: z.string().min(10).max(20),
 });
 
+export const bookByDateSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  patientName: z.string().min(1).max(255),
+  patientEmail: z.string().email().max(255),
+  patientPhone: z.string().min(10).max(20),
+});
+
 export const slotOverrideSchema = z.object({
   slotId: z.number().int().positive(),
   status: z.nativeEnum(SlotStatus),

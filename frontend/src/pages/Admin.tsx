@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, startOfToday } from 'date-fns';
 import { adminApi } from '../services/api';
 import Button from '../components/Button';
 import { SlotType, SlotStatus } from '../types';
@@ -28,7 +28,7 @@ const Admin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    date: '',
+    date: format(startOfToday(), 'yyyy-MM-dd'), // Default to today
     type: '',
     status: '',
   });
@@ -70,8 +70,8 @@ const Admin: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage slots and view bookings</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Slot Management</h1>
+        <p className="text-gray-600">View booked appointment slots</p>
       </div>
 
       {/* Filters */}
@@ -86,7 +86,7 @@ const Admin: React.FC = () => {
               type="date"
               value={filters.date}
               onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -97,12 +97,12 @@ const Admin: React.FC = () => {
             <select
               value={filters.type}
               onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All</option>
-              <option value={SlotType.ONLINE}>Online</option>
-              <option value={SlotType.EXPRESS_SAME_DAY}>Express Same-Day</option>
-              <option value={SlotType.OFFLINE}>Offline</option>
+              <option value="ONLINE">Online</option>
+              <option value="EXPRESS_SAME_DAY">Express Same-Day</option>
+              <option value="OFFLINE">Offline</option>
             </select>
           </div>
 
@@ -113,13 +113,13 @@ const Admin: React.FC = () => {
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">All</option>
-              <option value={SlotStatus.AVAILABLE}>Available</option>
-              <option value={SlotStatus.BOOKED}>Booked</option>
-              <option value={SlotStatus.CANCELLED}>Cancelled</option>
-              <option value={SlotStatus.OVERRIDDEN}>Overridden</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="BOOKED">Booked</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="OVERRIDDEN">Overridden</option>
             </select>
           </div>
         </div>
@@ -128,9 +128,9 @@ const Admin: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setFilters({ date: '', type: '', status: '' })}
+            onClick={() => setFilters({ date: format(startOfToday(), 'yyyy-MM-dd'), type: '', status: '' })}
           >
-            Clear Filters
+            Reset to Today
           </Button>
         </div>
       </div>
@@ -175,7 +175,7 @@ const Admin: React.FC = () => {
                 {slots.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                      No slots found
+                      No booked slots found for this date
                     </td>
                   </tr>
                 ) : (
@@ -250,16 +250,10 @@ const Admin: React.FC = () => {
 
       {/* Statistics */}
       {slots.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="text-2xl font-bold text-gray-900">{slots.length}</div>
-            <div className="text-sm text-gray-600">Total Slots</div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <div className="text-2xl font-bold text-green-600">
-              {slots.filter(s => s.status === SlotStatus.AVAILABLE && !s.booking).length}
-            </div>
-            <div className="text-sm text-gray-600">Available</div>
+            <div className="text-sm text-gray-600">Total Booked Slots</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4">
             <div className="text-2xl font-bold text-red-600">

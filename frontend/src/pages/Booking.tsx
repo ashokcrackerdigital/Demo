@@ -1,63 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { startOfToday, addDays, endOfDay } from 'date-fns';
-import { format } from 'date-fns';
+import React, { useState } from 'react';
+import { startOfToday, addDays, endOfDay, format } from 'date-fns';
 import Calendar from '../components/Calendar';
-import SlotGrid from '../components/SlotGrid';
 import BookingModal from '../components/BookingModal';
+import Button from '../components/Button';
 import { slotsApi } from '../services/api';
-import { Slot, SlotsResponse } from '../types';
 
 const Booking: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
-  const [slots, setSlots] = useState<Slot[]>([]);
-  const [summary, setSummary] = useState<SlotsResponse['summary'] | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<{ message: string; slotTime?: string } | null>(null);
 
-  // Fetch slots when date changes
-  useEffect(() => {
-    fetchSlots();
-  }, [selectedDate]);
-
-  const fetchSlots = async () => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const response = await slotsApi.getSlots(dateStr);
-      setSlots(response.slots);
-      setSummary(response.summary);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch slots');
-      setSlots([]);
-      setSummary(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSlotClick = (slot: Slot) => {
-    if (slot.isBooked || slot.status === 'BOOKED') {
-      return;
-    }
-    if (slot.type === 'OFFLINE') {
-      setError('This slot cannot be booked online. Please call us for assistance.');
-      return;
-    }
-    if (slot.type === 'EXPRESS_SAME_DAY' && slot.message.includes('Not yet available')) {
-      setError('Express slots can only be booked after 6:00 AM on the same day.');
-      return;
-    }
-    setSelectedSlot(slot);
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
     setIsModalOpen(true);
     setError(null);
-    setSuccess(null);
+    setSuccessMessage(null);
   };
 
   const handleBookingConfirm = async (data: {
@@ -65,26 +24,24 @@ const Booking: React.FC = () => {
     patientEmail: string;
     patientPhone: string;
   }) => {
-    if (!selectedSlot) {
-      return;
-    }
-
     setIsBooking(true);
     setError(null);
-    setSuccess(null);
+    setSuccessMessage(null);
 
     try {
-      await slotsApi.bookSlot({
-        slotId: selectedSlot.id,
-        ...data,
-      });
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const response = await slotsApi.bookSlotByDate(dateStr, data);
 
-      setSuccess('Booking confirmed successfully!');
+      // Format slot time for display
+      const slotTime = response.slotTime 
+        ? format(new Date(response.slotTime), 'HH:mm')
+        : undefined;
+
+      setSuccessMessage({
+        message: response.message || 'Booking confirmed successfully!',
+        slotTime,
+      });
       setIsModalOpen(false);
-      setSelectedSlot(null);
-      
-      // Refresh slots
-      await fetchSlots();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to book slot');
     } finally {
@@ -94,15 +51,18 @@ const Booking: React.FC = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedSlot(null);
     setError(null);
+  };
+
+  const handleCloseSuccess = () => {
+    setSuccessMessage(null);
   };
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Book an Appointment</h1>
-        <p className="text-gray-600">Select a date and time slot for your appointment</p>
+        <p className="text-gray-600">Select a date to book your appointment</p>
       </div>
 
       {/* Error Message */}
@@ -112,43 +72,78 @@ const Booking: React.FC = () => {
         </div>
       )}
 
-      {/* Success Message */}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-          <p>{success}</p>
+      {/* Success Popup Modal */}
+      {successMessage && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={handleCloseSuccess}
+              aria-hidden="true"
+            ></div>
+
+            {/* Modal */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <svg
+                      className="h-6 w-6 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Booking Confirmed!
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {successMessage.message}
+                  </p>
+                  {successMessage.slotTime && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-gray-600 mb-1">Your appointment time:</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {successMessage.slotTime}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {format(selectedDate, 'MMMM d, yyyy')}
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    onClick={handleCloseSuccess}
+                    variant="primary"
+                    className="w-full sm:w-auto"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Calendar */}
       <Calendar
         selectedDate={selectedDate}
-        onDateSelect={setSelectedDate}
+        onDateSelect={handleDateClick}
         minDate={startOfToday()}
         maxDate={endOfDay(addDays(startOfToday(), 14))} // Next 15 days (today + 14, inclusive)
       />
 
-      {/* Slots Grid */}
-      {isLoading ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Loading slots...</p>
-        </div>
-      ) : slots.length > 0 ? (
-        <SlotGrid
-          slots={slots}
-          summary={summary || undefined}
-          onSlotClick={handleSlotClick}
-          selectedSlotId={selectedSlot?.id}
-        />
-      ) : (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <p className="text-gray-600">No slots available for this date.</p>
-        </div>
-      )}
-
       {/* Booking Modal */}
       <BookingModal
-        slot={selectedSlot}
+        date={selectedDate}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onConfirm={handleBookingConfirm}

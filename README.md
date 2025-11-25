@@ -7,35 +7,44 @@ A full-stack, production-ready healthcare booking application built with React, 
 - **Frontend**: React + TypeScript + Vite + TailwindCSS
 - **Backend**: Node.js + Express + TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Cache/Locking**: Redis (local)
+- **Cache/Locking**: Redis (local, optional)
 - **Validation**: Zod
 - **Testing**: Vitest
+
+---
 
 ## 📋 Prerequisites
 
 Before starting, ensure you have the following installed:
 
-- **Node.js** (v18 or higher)
-- **npm** (v9 or higher)
-- **PostgreSQL** (v14 or higher) - running locally
-- **Redis** (v7 or higher) - running locally
+- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
+- **npm** (v9 or higher) - Comes with Node.js
+- **PostgreSQL** (v14 or higher) - Running locally
+- **Redis** (v7 or higher) - Running locally (optional, but recommended)
 
 ### Installing PostgreSQL (macOS)
 
 ```bash
 # Using Homebrew
 brew install postgresql@14
+
+# Start PostgreSQL service
 brew services start postgresql@14
 
 # Create database
 createdb healthcare_booking
+
+# Verify database exists
+psql -l | grep healthcare_booking
 ```
 
-### Installing Redis (macOS)
+### Installing Redis (macOS) - Optional
 
 ```bash
 # Using Homebrew
 brew install redis
+
+# Start Redis service
 brew services start redis
 
 # Verify Redis is running
@@ -43,217 +52,329 @@ redis-cli ping
 # Should return: PONG
 ```
 
-## 🚀 Quick Start
+**Note:** Redis is optional. If Redis is not running, the app will work without rate limiting and distributed locking.
 
-### 1. Clone and Install Dependencies
+---
+
+## 🚀 First Time Setup (Step-by-Step)
+
+### Step 1: Open Project Directory
+
+### Step 2: Install Root Dependencies
 
 ```bash
-# Install root dependencies
+# Install root dependencies (concurrently for running both servers)
 npm install
+```
 
-# Install all workspace dependencies
+### Step 3: Install All Workspace Dependencies
+
+```bash
+# Install dependencies for both backend and frontend
 npm run install:all
 ```
 
-### 2. Set Up Backend
+यह command automatically:
+- ✅ Root dependencies install करेगा
+- ✅ Backend dependencies install करेगा
+- ✅ Frontend dependencies install करेगा
+
+### Step 4: Setup Backend Environment
 
 ```bash
+# Go to backend directory
 cd backend
 
-# Copy environment template
-cp .env.example .env
+# Create .env file (if it doesn't exist)
+# Copy this content to backend/.env:
 
-# Edit .env file with your database and Redis credentials
-# DATABASE_URL="postgresql://username:password@localhost:5432/healthcare_booking?schema=public"
+# DATABASE_URL="postgresql://ashok@localhost:5432/healthcare_booking?schema=public"
 # REDIS_URL="redis://localhost:6379"
 # PORT=3001
 # NODE_ENV=development
 
-# Generate Prisma client
+# Or create file manually with above content
+```
+
+**Important:** Replace `ashok` in DATABASE_URL with your PostgreSQL username if different.
+
+### Step 5: Setup Database (Prisma)
+
+```bash
+# Make sure you're in backend directory
+cd backend
+
+# Generate Prisma Client
 npx prisma generate
 
 # Run database migrations
 npx prisma migrate dev --name init
 
-# Seed the database (generates 15 days of slots)
+# Seed the database (creates 15 days of slots)
 npx prisma db seed
 ```
 
-### 3. Set Up Frontend
+✅ अगर सब कुछ successful है, तो आपको message दिखेगा: "✅ Database seeded successfully!"
+
+### Step 6: Setup Frontend Environment (Optional)
+
+**📍 Location: Frontend directory (`/Users/ashok/Desktop/Work/Demo/frontend`)**
 
 ```bash
+# Go to frontend directory
 cd frontend
 
-# Copy environment template
-cp .env.example .env
-
-# Edit .env file if needed
+# Frontend .env file is optional
+# Default API URL is: http://localhost:3001
+# If you need to change it, create frontend/.env with:
 # VITE_API_URL=http://localhost:3001
 ```
 
-### 4. Run the Application
+---
 
-**एक ही command से Frontend और Backend दोनों start करें:**
+## 🎯 Running the Application
 
-Root directory से:
+### **✅ One Command to Run Everything**
+
+**📍 Location: Root directory (`/Users/ashok/Desktop/Work/Demo`)**
 
 ```bash
+# Make sure you're in the root directory
+cd /Users/ashok/Desktop/Work/Demo
+
+# Run both frontend and backend together
 npm run dev
 ```
 
-यह automatically:
-- ✅ Backend server start करेगा (port 3001)
-- ✅ Frontend server start करेगा (port 5173)
+यह एक ही command:
+- ✅ Backend server start करेगा (port 3001 पर)
+- ✅ Frontend server start करेगा (port 5173 पर)
 - ✅ दोनों एक साथ run होंगे
-- ✅ Redis के बिना भी काम करेगा (graceful degradation)
+- ✅ Output अलग-अलग colors में दिखेगा
 
-**Access करें:**
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:3001
-- **Health Check**: http://localhost:3001/health
+### **Access the Application**
 
-**Note:** Redis optional है। अगर Redis नहीं चल रहा है, तो server बिना rate limiting और distributed locking के चलेगा (बाकी features काम करेंगे)।
+After running `npm run dev`, open your browser:
+
+- **🌐 Frontend (Main App)**: http://localhost:5173
+- **🔧 Backend API**: http://localhost:3001
+- **❤️ Health Check**: http://localhost:3001/health
+
+---
 
 ## 📁 Project Structure
 
 ```
-.
-├── backend/
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── slots.ts
-│   │   │   ├── booking.ts
-│   │   │   └── admin.ts
-│   │   ├── middleware/
-│   │   │   ├── rateLimiter.ts
-│   │   │   ├── errorHandler.ts
-│   │   │   └── logger.ts
-│   │   ├── services/
-│   │   │   ├── slotService.ts
-│   │   │   ├── bookingService.ts
-│   │   │   └── redisService.ts
-│   │   ├── utils/
-│   │   │   ├── validation.ts
-│   │   │   └── lock.ts
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   └── index.ts
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── seed.ts
-│   ├── tests/
-│   │   ├── slotService.test.ts
-│   │   ├── bookingService.test.ts
-│   │   └── concurrency.test.ts
+Demo/
+├── backend/              # Backend code
+│   ├── src/             # Source files
+│   ├── prisma/          # Database schema & migrations
+│   ├── tests/           # Test files
+│   ├── .env             # Backend environment variables
 │   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Home.tsx
-│   │   │   ├── Booking.tsx
-│   │   │   └── Admin.tsx
-│   │   ├── components/
-│   │   │   ├── Calendar.tsx
-│   │   │   ├── SlotGrid.tsx
-│   │   │   ├── BookingModal.tsx
-│   │   │   ├── Layout.tsx
-│   │   │   └── Button.tsx
-│   │   ├── services/
-│   │   │   └── api.ts
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── index.html
+├── frontend/            # Frontend code
+│   ├── src/             # Source files
+│   ├── .env             # Frontend environment variables (optional)
 │   └── package.json
-└── .github/
-    └── workflows/
-        └── ci.yml
+├── package.json         # Root package.json
+└── README.md           # This file
 ```
+
+---
 
 ## 🔑 Environment Variables
 
-### Backend (.env)
+### Backend (`backend/.env`)
 
 ```env
-DATABASE_URL="postgresql://username:password@localhost:5432/healthcare_booking?schema=public"
+DATABASE_URL="postgresql://ashok@localhost:5432/healthcare_booking?schema=public"
 REDIS_URL="redis://localhost:6379"
 PORT=3001
 NODE_ENV=development
 ```
 
-### Frontend (.env)
+**Important:** Replace `ashok` with your PostgreSQL username.
+
+### Frontend (`frontend/.env` - Optional)
 
 ```env
 VITE_API_URL=http://localhost:3001
 ```
 
-## 📊 Business Rules
+---
 
-- **100 slots per day** for the next 15 days:
-  - 50 ONLINE (bookable any day)
-  - 30 EXPRESS SAME-DAY (bookable only today after 06:00 local time)
-  - 20 OFFLINE (not bookable online)
-- **Facility hours**: 10:00 AM - 5:00 PM
-- **10 slots per hour**
-- **Booking**: First-Come-First-Served (FCFS) with Redis distributed locking
-- Express slots can only be booked after 6:00 AM on the same day
+## 📊 Features
 
-## 🧪 Testing
+### Booking System
+
+- ✅ **Calendar-based booking**: Select a date and auto-assign next available slot
+- ✅ **50 online slots per day**: First slot at 10:00 AM, then 10:04, 10:08... (4-minute intervals)
+- ✅ **Auto slot assignment**: System automatically assigns next available slot
+- ✅ **Slot availability check**: Shows offline booking message if >80 slots booked
+- ✅ **Success popup**: Shows assigned time slot after booking
+
+### Admin Panel
+
+- ✅ **Slot Management**: View all booked slots
+- ✅ **Date filtering**: Filter slots by date (default: today)
+- ✅ **Slot override**: Admin can override slot status
+
+---
+
+## 🛠️ Available Commands
+
+### Root Directory Commands
+
+```bash
+# Install all dependencies
+npm run install:all
+
+# Run both frontend and backend (🚀 USE THIS!)
+npm run dev
+
+# Build both projects
+npm run build
+
+# Run tests
+npm run test
+
+# Run linter
+npm run lint
+```
+
+### Backend Commands (from `backend/` directory)
 
 ```bash
 cd backend
-npm test
 
-# Run specific test file
-npm test -- slotService.test.ts
+# Run backend only
+npm run dev
+
+# Generate Prisma client
+npx prisma generate
+
+# Run migrations
+npx prisma migrate dev
+
+# Seed database
+npx prisma db seed
+
+# Run tests
+npm test
 ```
 
-## 🔧 Available Scripts
+### Frontend Commands (from `frontend/` directory)
 
-### Root
+```bash
+cd frontend
 
-- `npm run dev` - Run both frontend and backend
-- `npm run build` - Build both frontend and backend
-- `npm run test` - Run backend tests
-- `npm run lint` - Lint both projects
+# Run frontend only
+npm run dev
 
-### Backend
+# Build for production
+npm run build
 
-- `npm run dev` - Start development server
-- `npm run build` - Build TypeScript
-- `npm run start` - Start production server
-- `npm test` - Run tests
-- `npm run lint` - Lint code
+# Preview production build
+npm run preview
+```
 
-### Frontend
+---
 
-- `npm run dev` - Start Vite dev server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Lint code
+## 🔒 Rate Limiting
+
+- **5 requests per minute per IP** for all endpoints
+- Implemented using Redis
+- Works without Redis too (rate limiting disabled)
+
+---
+
+## 🐛 Troubleshooting
+
+### PostgreSQL Connection Issues
+
+```bash
+# Check if PostgreSQL is running
+brew services list | grep postgresql
+
+# Check if database exists
+psql -l | grep healthcare_booking
+
+# If database doesn't exist, create it
+createdb healthcare_booking
+
+# Check connection
+psql -d healthcare_booking -c "SELECT 1;"
+```
+
+### Redis Connection Issues
+
+```bash
+# Check if Redis is running
+redis-cli ping
+# Should return: PONG
+
+# Start Redis if not running
+brew services start redis
+```
+
+**Note:** App works without Redis, but rate limiting and distributed locking will be disabled.
+
+### Port Already in Use
+
+```bash
+# Check what's using port 3001 (backend)
+lsof -i :3001
+
+# Check what's using port 5173 (frontend)
+lsof -i :5173
+
+# Kill process if needed
+kill -9 <PID>
+```
+
+### Dependencies Issues
+
+```bash
+# Clean install all dependencies
+rm -rf node_modules backend/node_modules frontend/node_modules package-lock.json
+npm run install:all
+```
+
+### Database Issues
+
+```bash
+cd backend
+
+# Reset database (⚠️ This will delete all data!)
+npx prisma migrate reset
+
+# Re-seed database
+npx prisma db seed
+```
+
+---
 
 ## 📝 API Endpoints
 
 ### GET /api/slots?date=YYYY-MM-DD
 Get available slots for a specific date.
 
-### POST /api/book
-Book a slot.
+### POST /api/book/by-date
+Book a slot by date (auto-assigns next available slot).
 ```json
 {
-  "slotId": 1,
+  "date": "2025-11-25",
   "patientName": "John Doe",
   "patientEmail": "john@example.com",
-  "patientPhone": "+1234567890"
+  "patientPhone": "+91 98765 43210"
 }
 ```
 
-### GET /api/admin/slots
-Get all slots with booking information (admin only).
+### GET /api/admin/slots?date=YYYY-MM-DD
+Get all booked slots for a specific date (admin only).
 
 ### POST /api/admin/slot/override
-Override slot availability (admin only).
+Override slot status (admin only).
 ```json
 {
   "slotId": 1,
@@ -261,43 +382,38 @@ Override slot availability (admin only).
 }
 ```
 
-## 🔒 Rate Limiting
+---
 
-- **5 requests per minute per IP** for all endpoints
-- Implemented using Redis
+## ✅ Quick Checklist
 
-## 🛡️ Security Features
+First time setup के बाद, verify करें:
 
-- Rate limiting
-- Input validation (Zod)
-- SQL injection prevention (Prisma)
-- Distributed locking for concurrent bookings
-- Audit logging (IP, user-agent, timestamp)
+- [ ] PostgreSQL running है (`brew services list | grep postgresql`)
+- [ ] Database `healthcare_booking` exists है
+- [ ] Backend `.env` file में correct DATABASE_URL है
+- [ ] Prisma migrations run हो गए हैं
+- [ ] Database seed successful है
+- [ ] Redis running है (optional)
+- [ ] Root directory से `npm run dev` command काम कर रही है
 
-## 🤝 Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests and linting
-4. Submit a pull request
+---
 
 ## 📄 License
 
 MIT
 
-## 🐛 Troubleshooting
+---
 
-### PostgreSQL Connection Issues
-- Verify PostgreSQL is running: `brew services list | grep postgresql`
-- Check connection string in `.env`
-- Ensure database exists: `psql -l | grep healthcare_booking`
+## 🆘 Need Help?
 
-### Redis Connection Issues
-- Verify Redis is running: `redis-cli ping`
-- Check Redis URL in `.env`
+If you face any issues:
 
-### Port Already in Use
-- Backend default: 3001
-- Frontend default: 5173
-- Change ports in `.env` files if needed
+1. Check the **Troubleshooting** section above
+2. Verify all prerequisites are installed
+3. Check if PostgreSQL and Redis are running
+4. Verify `.env` files have correct values
+5. Try clean install: `rm -rf node_modules && npm run install:all`
 
+---
+
+**🎉 Happy Coding!**
