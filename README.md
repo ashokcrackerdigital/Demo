@@ -118,8 +118,6 @@ npx prisma db seed
 
 ### Step 6: Setup Frontend Environment (Optional)
 
-**📍 Location: Frontend directory (`/Users/ashok/Desktop/Work/Demo/frontend`)**
-
 ```bash
 # Go to frontend directory
 cd frontend
