@@ -24,22 +24,22 @@ router.get('/slots', async (req: Request, res: Response, next) => {
     slots = slots.filter(s => s.booking !== null);
 
     // Filter by date if provided
-    if (date) {
-      const filterDateStr = date.split('T')[0]; // Extract just YYYY-MM-DD (e.g., "2025-11-25")
-      slots = slots.filter(s => {
-        // Check both slot.date and startTime date to handle timezone issues
-        const slotDateStr = typeof s.date === 'string' 
-          ? s.date.split('T')[0] 
-          : s.date.toISOString().split('T')[0];
-        
-        // Also check startTime date in case there's a timezone mismatch
-        const startTimeDate = new Date(s.startTime);
-        const startTimeDateStr = startTimeDate.toISOString().split('T')[0];
-        
-        // Match if either date matches (handles timezone differences)
+    if (typeof date === "string" && date.length > 0) {
+      const filterDateStr = String(date).split("T")[0];
+    
+      slots = slots.filter((s) => {
+        // date field safe conversion
+        const slotDate = s.date instanceof Date ? s.date : new Date(s.date);
+        const slotDateStr = slotDate.toISOString().split("T")[0];
+    
+        // startTime safe conversion
+        const startTime = s.startTime instanceof Date ? s.startTime : new Date(s.startTime);
+        const startTimeDateStr = startTime.toISOString().split("T")[0];
+    
         return slotDateStr === filterDateStr || startTimeDateStr === filterDateStr;
       });
     }
+    
 
     // Filter by type if provided
     if (type) {
