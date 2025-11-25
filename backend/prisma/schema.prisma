@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SlotType {
+  ONLINE
+  EXPRESS_SAME_DAY
+  OFFLINE
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  CANCELLED
+  OVERRIDDEN
+}
+
+model Facility {
+  id          Int      @id @default(autoincrement())
+  name        String
+  address     String
+  startHour   Int      @default(10) // 10 AM
+  endHour     Int      @default(17) // 5 PM
+  slotsPerHour Int     @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  slots       Slot[]
+}
+
+model Slot {
+  id          Int       @id @default(autoincrement())
+  facilityId  Int
+  facility    Facility  @relation(fields: [facilityId], references: [id])
+  date        DateTime  @db.Date
+  startTime   DateTime
+  endTime     DateTime
+  type        SlotType
+  status      SlotStatus @default(AVAILABLE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  booking     Booking?
+
+  @@unique([facilityId, date, startTime, type])
+  @@index([date])
+  @@index([status])
+  @@index([type])
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  slotId        Int      @unique
+  slot          Slot     @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  patientName   String
+  patientEmail  String
+  patientPhone  String
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([patientEmail])
+  @@index([createdAt])
+}
+
