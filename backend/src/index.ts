@@ -57,6 +57,8 @@ app.use(errorHandler);
 
 // Initialize Redis connection
 async function startServer() {
+  console.log('RUNTIME DATABASE_URL =', process.env.DATABASE_URL);
+
   try {
     // Try to connect to Redis (optional - server will work without it)
     await redisService.connect();
