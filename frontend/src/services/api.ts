@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SlotsResponse, BookingRequest, BookingResponse } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
   baseURL: API_URL,

@@ -20,15 +20,7 @@ export async function getSlotsForDate(date: Date): Promise<SlotWithBooking[]> {
       },
     },
     include: {
-      booking: {
-        select: {
-          id: true,
-          patientName: true,
-          patientEmail: true,
-          patientPhone: true,
-          createdAt: true,
-        },
-      },
+      booking: true, // ← FIXED
     },
     orderBy: [
       { startTime: 'asc' },
@@ -36,59 +28,33 @@ export async function getSlotsForDate(date: Date): Promise<SlotWithBooking[]> {
     ],
   });
 
-  return slots.map((slot) => ({
-    ...slot,
-    date: slot.date,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-  }));
+  return slots;
 }
 
 /**
- * Get a slot by ID with booking information
+ * Get a slot by ID with booking info
  */
 export async function getSlotById(slotId: number): Promise<SlotWithBooking | null> {
   const slot = await prisma.slot.findUnique({
     where: { id: slotId },
     include: {
-      booking: {
-        select: {
-          id: true,
-          patientName: true,
-          patientEmail: true,
-          patientPhone: true,
-          createdAt: true,
-        },
-      },
+      booking: true, // ← FIXED
     },
   });
 
-  if (!slot) {
-    return null;
-  }
-
-  return {
-    ...slot,
-    date: slot.date,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-  };
+  return slot;
 }
 
 /**
- * Check if express slot can be booked (only after 6 AM on the same day)
+ * Check if express slot can be booked
  */
 export function canBookExpressSlot(slotDate: Date): boolean {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const slotDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
 
-  // Check if slot is for today
-  if (slotDay.getTime() !== today.getTime()) {
-    return false;
-  }
+  if (slotDay.getTime() !== today.getTime()) return false;
 
-  // Check if it's after 6 AM
   const sixAM = new Date(today);
   sixAM.setHours(6, 0, 0, 0);
 
@@ -96,25 +62,19 @@ export function canBookExpressSlot(slotDate: Date): boolean {
 }
 
 /**
- * Get slot type message for display
+ * Slot type message for UI
  */
 export function getSlotTypeMessage(type: SlotType, date: Date, status: SlotStatus): string {
-  if (status === SlotStatus.BOOKED) {
-    return 'Booked';
-  }
-
-  if (status === SlotStatus.CANCELLED) {
-    return 'Cancelled';
-  }
+  if (status === SlotStatus.BOOKED) return 'Booked';
+  if (status === SlotStatus.CANCELLED) return 'Cancelled';
 
   switch (type) {
     case SlotType.ONLINE:
       return 'Available';
     case SlotType.EXPRESS_SAME_DAY:
-      if (canBookExpressSlot(date)) {
-        return 'Express (Available)';
-      }
-      return 'Express (Not yet available)';
+      return canBookExpressSlot(date)
+        ? 'Express (Available)'
+        : 'Express (Not yet available)';
     case SlotType.OFFLINE:
       return 'Offline (Not bookable online)';
     default:
@@ -123,22 +83,14 @@ export function getSlotTypeMessage(type: SlotType, date: Date, status: SlotStatu
 }
 
 /**
- * Get all slots with filters (admin)
+ * Admin: Get all slots
  */
 export async function getAllSlots(limit: number = 1000, offset: number = 0): Promise<SlotWithBooking[]> {
   const slots = await prisma.slot.findMany({
     take: limit,
     skip: offset,
     include: {
-      booking: {
-        select: {
-          id: true,
-          patientName: true,
-          patientEmail: true,
-          patientPhone: true,
-          createdAt: true,
-        },
-      },
+      booking: true, // ← FIXED
     },
     orderBy: [
       { date: 'asc' },
@@ -146,39 +98,20 @@ export async function getAllSlots(limit: number = 1000, offset: number = 0): Pro
     ],
   });
 
-  return slots.map((slot) => ({
-    ...slot,
-    date: slot.date,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-  }));
+  return slots;
 }
 
 /**
- * Override slot status (admin)
+ * Admin: Override slot status
  */
 export async function overrideSlotStatus(slotId: number, status: SlotStatus): Promise<SlotWithBooking> {
   const slot = await prisma.slot.update({
     where: { id: slotId },
     data: { status },
     include: {
-      booking: {
-        select: {
-          id: true,
-          patientName: true,
-          patientEmail: true,
-          patientPhone: true,
-          createdAt: true,
-        },
-      },
+      booking: true, // ← FIXED
     },
   });
 
-  return {
-    ...slot,
-    date: slot.date,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-  };
+  return slot;
 }
-

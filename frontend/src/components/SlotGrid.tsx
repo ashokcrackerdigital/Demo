@@ -1,7 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Slot, SlotType } from '../types';
-import Button from './Button';
 
 interface SlotGridProps {
   slots: Slot[];

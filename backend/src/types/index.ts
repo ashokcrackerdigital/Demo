@@ -1,7 +1,8 @@
-import { SlotType, SlotStatus } from '@prisma/client';
+import { Slot, Booking, SlotType, SlotStatus } from "@prisma/client";
 
 export { SlotType, SlotStatus };
 
+// Booking request from client
 export interface BookingRequest {
   slotId: number;
   patientName: string;
@@ -9,30 +10,18 @@ export interface BookingRequest {
   patientPhone: string;
 }
 
+// Admin override request
 export interface SlotOverrideRequest {
   slotId: number;
   status: SlotStatus;
 }
 
-export interface SlotWithBooking {
-  id: number;
-  facilityId: number;
-  date: Date;
-  startTime: Date;
-  endTime: Date;
-  type: SlotType;
-  status: SlotStatus;
-  booking: {
-    id: number;
-    patientName: string;
-    patientEmail: string;
-    patientPhone: string;
-    createdAt: Date;
-  } | null;
-}
+// Use Prisma types – they include createdAt, updatedAt automatically
+export type SlotWithBooking = Slot & {
+  booking: Booking | null;
+};
 
 export interface AuditInfo {
   ipAddress?: string;
   userAgent?: string;
 }
-

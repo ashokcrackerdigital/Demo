@@ -17,7 +17,10 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: [
+    'http://localhost:5173',
+    'https://healthbookpro.netlify.app'
+  ],
   credentials: true,
 }));
 app.use(express.json());
@@ -54,6 +57,8 @@ app.use(errorHandler);
 
 // Initialize Redis connection
 async function startServer() {
+  console.log('RUNTIME DATABASE_URL =', process.env.DATABASE_URL);
+
   try {
     // Try to connect to Redis (optional - server will work without it)
     await redisService.connect();

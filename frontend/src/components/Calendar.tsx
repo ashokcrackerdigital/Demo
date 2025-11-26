@@ -231,7 +231,7 @@ const Calendar: React.FC<CalendarProps> = ({
         ))}
 
         {/* Date cells */}
-        {days.map((date, index) => {
+        {days.map((date) => {
           const isSelected = isSameDay(date, selectedDate);
           const isTodayDate = isToday(date);
           const isCurrentMonth = isSameMonth(date, currentMonth);
